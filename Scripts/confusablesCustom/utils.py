@@ -1,5 +1,2 @@
 def is_ascii(string):
-    for char in string:
-        if ord(char) >= 128:
-            return False
-    return True
+    return all(ord(char) < 128 for char in string)

@@ -51,7 +51,7 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
     if author['possibleFalsePositive'] == True:
       possibleFalsePositive = True
       break
-    
+
 
   # Print Sample Match List
   valuesPreparedToWrite = ""
@@ -73,11 +73,9 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
   # Decide whether to write notice for spam threads based on video title
   if current.spamThreadsDict and current.vidTitleDict:
     keywords = ['invest', 'crypto', 'bitcoin', 'ethereum', 'nft', 'market', 'stock']
-    if any(word in str(list(current.vidTitleDict.values())).lower() for word in keywords):
-      spamThreadNotice = True
-    else:
-      spamThreadNotice = False  
-
+    spamThreadNotice = any(
+        (word in str(list(current.vidTitleDict.values())).lower()
+         for word in keywords))
   def print_and_write(value, writeValues, printValues):
     indexString = value['iString']
     countString = value['cString']
@@ -90,21 +88,22 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
     countString = countString.replace(u"\u001b[32m", "").replace(u"\u001b[0m", "")
     nameAndText = nameAndText.replace(u"\u001b[32m", "").replace(u"\u001b[0m", "")
 
-    if loggingEnabled == True and logMode == "rtf":
-      writeValues = writeValues + indexString + countString + f"{str(authorID)} | {make_rtf_compatible(str(nameAndText))} \\line \n"
-    elif loggingEnabled == True and logMode == "plaintext":
-      writeValues = writeValues + indexString + countString + f"{str(authorID)} | {str(nameAndText)}\n"
+    if loggingEnabled == True:
+      if logMode == "rtf":
+        writeValues = writeValues + indexString + countString + f"{str(authorID)} | {make_rtf_compatible(str(nameAndText))} \\line \n"
+      elif logMode == "plaintext":
+        writeValues = writeValues + indexString + countString + f"{str(authorID)} | {str(nameAndText)}\n"
     return writeValues, printValues
-    # --------------------------------------------------------------------------------------------
+      # --------------------------------------------------------------------------------------------
+
 
   if doWritePrint:
     print(f"{F.LIGHTMAGENTA_EX}============================ Match Samples: One comment per matched-comment author ============================{S.R}")
     if possibleFalsePositive:
       print(f"{F.GREEN}======= {B.GREEN}{F.BLACK} NOTE: {S.R}{F.GREEN} Possible false positives marked with * and highlighted in green. Check them extra well! ======={S.R}")
   for value in current.matchSamplesDict.values():
-    if value['matchReason'] != "Duplicate" and value['matchReason'] != "Spam Bot Thread" and value['matchReason'] != "Repost":
+    if value['matchReason'] not in ["Duplicate", "Spam Bot Thread", "Repost"]:
       valuesPreparedToWrite, valuesPreparedToPrint = print_and_write(value, valuesPreparedToWrite, valuesPreparedToPrint)
-    # If there are duplicates, save those to print later, but get ready by calculating some duplicate info
     elif value['matchReason'] == "Duplicate":
       hasDuplicates = True
       similarity = str(round(float(config['levenshtein_distance'])*100))+"%"
@@ -117,17 +116,16 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
         repostSimilarity = str(round(float(config['levenshtein_distance'])*100))+"%"
       else:
         repostSimilarity = "100%"
-      minLength = str(config['stolen_minimum_text_length'])      
+      minLength = str(config['stolen_minimum_text_length'])
   if doWritePrint:
     print(valuesPreparedToPrint)
 
   # Print Spam Thread Match Samples
-  if hasSpamThreads == True:
-    if doWritePrint:
-      print(f"{S.BRIGHT}{F.MAGENTA}============================ Match Samples: Spam Bot Threads ============================{S.R}")
-      if spamThreadNotice == True:
-        print(f"{F.YELLOW}{F.BLACK}{B.YELLOW} NOTE: {S.R}{F.YELLOW} If video is about investing/crypto, inspect these extra well for false positives{S.R}")
-        print("-----------------------------------------------------------------------------------------")
+  if hasSpamThreads == True and doWritePrint:
+    print(f"{S.BRIGHT}{F.MAGENTA}============================ Match Samples: Spam Bot Threads ============================{S.R}")
+    if spamThreadNotice == True:
+      print(f"{F.YELLOW}{F.BLACK}{B.YELLOW} NOTE: {S.R}{F.YELLOW} If video is about investing/crypto, inspect these extra well for false positives{S.R}")
+      print("-----------------------------------------------------------------------------------------")
   for value in current.matchSamplesDict.values():
     if value['matchReason'] == "Spam Bot Thread":
       spamThreadValuesPreparedToWrite, spamThreadValuesPreparedToPrint = print_and_write(value, spamThreadValuesPreparedToWrite, spamThreadValuesPreparedToPrint)
@@ -135,10 +133,9 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
     print(spamThreadValuesPreparedToPrint)
 
   # Print Duplicate Match Samples
-  if hasDuplicates == True:
-    if doWritePrint:
-      print(f"{F.LIGHTMAGENTA_EX}------------------------- {S.BRIGHT}{F.WHITE}{B.BLUE} Non-Matched {S.R}{F.LIGHTCYAN_EX} Commenters, But Who Wrote Many Similar Comments{F.LIGHTMAGENTA_EX} -------------------------{S.R}")
-      print(f"{F.MAGENTA}---------------------------- ( {F.LIGHTBLUE_EX}Similarity Threshold: {similarity}  |  Minimum Duplicates: {minDupes}{F.MAGENTA} ) ----------------------------{S.R}")
+  if hasDuplicates == True and doWritePrint:
+    print(f"{F.LIGHTMAGENTA_EX}------------------------- {S.BRIGHT}{F.WHITE}{B.BLUE} Non-Matched {S.R}{F.LIGHTCYAN_EX} Commenters, But Who Wrote Many Similar Comments{F.LIGHTMAGENTA_EX} -------------------------{S.R}")
+    print(f"{F.MAGENTA}---------------------------- ( {F.LIGHTBLUE_EX}Similarity Threshold: {similarity}  |  Minimum Duplicates: {minDupes}{F.MAGENTA} ) ----------------------------{S.R}")
   for value in current.matchSamplesDict.values():
     if value['matchReason'] == "Duplicate":
       duplicateValuesToWrite, duplicateValuesToPrint = print_and_write(value, duplicateValuesToWrite, duplicateValuesToPrint)
@@ -163,8 +160,8 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
       if possibleFalsePositive:
         addLine = "\\line \n====================  NOTE:  Possible false positives marked with * Check them extra well! ==================== \\line\\line \n"
       else: addLine = "\\line\\line \n"
-      matchSamplesContent = f"==================== Match Samples: One comment per matched-comment author ==================== {addLine}" + valuesPreparedToWrite
-      
+      matchSamplesContent = f"==================== Match Samples: One comment per matched-comment author ==================== {addLine}{valuesPreparedToWrite}"
+            
 
       if doWritePrint:
         write_rtf(current.logFileName, matchSamplesContent)
@@ -176,14 +173,14 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
         if doWritePrint:
           write_rtf(current.logFileName, spamThreadSamplesContent)
       if hasDuplicates == True:
-        duplicateSamplesContent = " \n \\line\\line -------------------- Non-Matched Commenters, but who wrote many similar comments -------------------- \\line \n" 
-        duplicateSamplesContent += f"---------------------- ( Similarity Threshold: {similarity}  |  Minimum Duplicates: {minDupes} ) ---------------------- \\line\\line \n" + duplicateValuesToWrite
+        duplicateSamplesContent = " \n \\line\\line -------------------- Non-Matched Commenters, but who wrote many similar comments -------------------- \\line \n"
+        duplicateSamplesContent += f"---------------------- ( Similarity Threshold: {similarity}  |  Minimum Duplicates: {minDupes} ) ---------------------- \\line\\line \n{duplicateValuesToWrite}"
         if doWritePrint:
           write_rtf(current.logFileName, duplicateSamplesContent)
 
       if hasReposts == True:
-        repostSamplesContent = " \n \\line\\line -------------------- Non-Matched Commenters, But Who Reposted a Previous Comment -------------------- \\line \n" 
-        repostSamplesContent += f"------------------------ ( Similarity Threshold: {repostSimilarity}  |  Minimum Length: {minLength} ) ------------------------ \\line\\line \n" + repostValuesToWrite
+        repostSamplesContent = " \n \\line\\line -------------------- Non-Matched Commenters, But Who Reposted a Previous Comment -------------------- \\line \n"
+        repostSamplesContent += f"------------------------ ( Similarity Threshold: {repostSimilarity}  |  Minimum Length: {minLength} ) ------------------------ \\line\\line \n{repostValuesToWrite}"
         if doWritePrint:
           write_rtf(current.logFileName, repostSamplesContent)
     elif logMode == "plaintext":
@@ -191,7 +188,7 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
         addLine = "====================  NOTE:  Possible false positives marked with * Check them extra well! ==================== \n"
       else: addLine = ""
 
-      matchSamplesContent = f"==================== Match Samples: One comment per matched-comment author ====================\n{addLine}" + valuesPreparedToWrite
+      matchSamplesContent = f"==================== Match Samples: One comment per matched-comment author ====================\n{addLine}{valuesPreparedToWrite}"
       if doWritePrint:
         write_plaintext_log(current.logFileName, matchSamplesContent)
       if current.spamThreadsDict:
@@ -203,7 +200,7 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
           write_plaintext_log(current.logFileName, spamThreadSamplesContent)
       if hasDuplicates == True:
         duplicateSamplesContent = "\n-------------------- Non-Matched Commenters, but who wrote many similar comments --------------------\n"
-        duplicateSamplesContent += f"---------------------- ( Similarity Threshold: {similarity}  |  Minimum Duplicates: {minDupes} ) ----------------------\n" + duplicateValuesToWrite
+        duplicateSamplesContent += f"---------------------- ( Similarity Threshold: {similarity}  |  Minimum Duplicates: {minDupes} ) ----------------------\n{duplicateValuesToWrite}"
         if doWritePrint:
           write_plaintext_log(current.logFileName, duplicateSamplesContent)
 
@@ -211,7 +208,7 @@ def print_comments(current, config, scanVideoID, loggingEnabled, scanMode, logMo
     logFileContents = commentsContents + matchSamplesContent + spamThreadSamplesContent + duplicateSamplesContent + repostSamplesContent
     if hasReposts == True:
       repostSamplesContent = "\n-------------------- Non-Matched Commenters, But Who Reposted a Previous Comment --------------------\n"
-      repostSamplesContent += f"------------------------ ( Similarity Threshold: {repostSimilarity}  |  Minimum Length: {minLength} ) ------------------------\n" + repostValuesToWrite
+      repostSamplesContent += f"------------------------ ( Similarity Threshold: {repostSimilarity}  |  Minimum Length: {minLength} ) ------------------------\n{repostValuesToWrite}"
       if doWritePrint:
         write_plaintext_log(current.logFileName, repostSamplesContent)
   else:

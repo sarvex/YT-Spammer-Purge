@@ -35,12 +35,9 @@ def is_confusable(str1, str2):
     return str1 == str2
 
 def confusable_characters(char):
-    mapped_chars = CONFUSABLE_MAP.get(char)
-    if mapped_chars:
+    if mapped_chars := CONFUSABLE_MAP.get(char):
         return mapped_chars
-    if len(char) <= 1:
-        return [char]
-    return None
+    return [char] if len(char) <= 1 else None
 
 def confusable_regex(string, include_character_padding=False):
     space_regex = "[\*_~|`\-\.]*" if include_character_padding else ''
@@ -52,7 +49,7 @@ def confusable_regex(string, include_character_padding=False):
     return regex
 
 def normalize(string, prioritize_alpha=False):
-    normal_forms = set([""])
+    normal_forms = {""}
     for char in string:
         normalized_chars = []
         confusable_chars = confusable_characters(char)
@@ -64,16 +61,18 @@ def normalize(string, prioritize_alpha=False):
                         if len(confusable) > 1:
                             normal = normalize(confusable)[0]
                         normalized_chars.append(normal)
-                else:
-                    if is_ascii(confusable) and confusable not in NON_NORMAL_ASCII_CHARS:
-                        normal = confusable
-                        if len(confusable) > 1:
-                            normal = normalize(confusable)[0]
-                        normalized_chars.append(normal)
+                elif is_ascii(confusable) and confusable not in NON_NORMAL_ASCII_CHARS:
+                    normal = confusable
+                    if len(confusable) > 1:
+                        normal = normalize(confusable)[0]
+                    normalized_chars.append(normal)
         else:
             normalized_chars = [char]
 
-        if len(normalized_chars) == 0:
+        if not normalized_chars:
             normalized_chars = [char]
-        normal_forms = set([x[0]+x[1].lower() for x in list(product(normal_forms, normalized_chars))])
+        normal_forms = {
+            x[0] + x[1].lower()
+            for x in list(product(normal_forms, normalized_chars))
+        }
     return sorted(list(normal_forms))

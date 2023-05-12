@@ -27,7 +27,7 @@ YT_INITIAL_DATA_RE = r'(?:window\s*\[\s*["\']ytInitialData["\']\s*\]|ytInitialDa
 
 def regex_search(text, pattern, group=1, default=None):
     match = re.search(pattern, text)
-    return match.group(group) if match else default
+    return match[group] if match else default
 
 
 def ajax_request(session, endpoint, ytcfg, retries=5, sleep=20):
@@ -59,8 +59,7 @@ def get_post_channel_url(youtube_id):
         return None # Unable to extract configuration
     data = json.loads(regex_search(html, YT_INITIAL_DATA_RE, default=''))
     try:
-        channelURL = data['microformat']['microformatDataRenderer']['urlCanonical']
-        return channelURL
+        return data['microformat']['microformatDataRenderer']['urlCanonical']
     except KeyError:
         return None
 
@@ -147,15 +146,16 @@ def download_comments(youtube_id, sort_by=SORT_BY_RECENT, language=None, sleep=.
             for item in action.get('continuationItems', []):
                 if action['targetId'] == 'comments-section':
                     # Process continuations for comments and replies.
-                    continuations[:0] = [ep for ep in search_dict(item, 'continuationEndpoint')]
+                    continuations[:0] = list(search_dict(item, 'continuationEndpoint'))
                 if action['targetId'].startswith('comment-replies-item') and 'continuationItemRenderer' in item:
                     # Process the 'Show more replies' button
                     continuations.append(next(search_dict(item, 'buttonRenderer'))['command'])
 
         # Get total comments amount for post
         try:
-            commentsHeader = list(search_dict(response, 'commentsHeaderRenderer'))
-            if commentsHeader:
+            if commentsHeader := list(
+                search_dict(response, 'commentsHeaderRenderer')
+            ):
                 postCommentsText = commentsHeader[0]['countText']['runs'][0]['text'].replace(',', '')
                 if 'k' in postCommentsText.lower():
                     totalPostComments = int(postCommentsText.replace('k', ''))*1000
@@ -196,14 +196,13 @@ def search_dict(partial, search_key):
                 else:
                     stack.append(value)
         elif isinstance(current_item, list):
-            for value in current_item:
-                stack.append(value)
+            stack.extend(iter(current_item))
 
 
 def main(communityPostID=None, limit=1000, sort=SORT_BY_RECENT, language=None, postScanProgressDict=None, postText=None):
     if not communityPostID:
         raise ValueError('you need to specify a Youtube ID')
-    
+
     if postScanProgressDict:
         i = postScanProgressDict['scanned']
         j = postScanProgressDict['total']
@@ -212,7 +211,7 @@ def main(communityPostID=None, limit=1000, sort=SORT_BY_RECENT, language=None, p
         print(f'\n Loading Comments For Post: {communityPostID}')
 
     if postText:
-            print(f"    >  {F.LIGHTCYAN_EX}Post Text Sample:{S.R} {postText[0:90]}")
+        print(f"    >  {F.LIGHTCYAN_EX}Post Text Sample:{S.R} {postText[:90]}")
 
     count = 0
     #print(f'    >  Loaded {F.YELLOW}{count}{S.R} comment(s)', end='\r')
@@ -232,10 +231,13 @@ def main(communityPostID=None, limit=1000, sort=SORT_BY_RECENT, language=None, p
         # Doesn't return a number after first page, so don't update after that
         if comment['totalPostComments']:
             totalComments = comment['totalPostComments']
-        
+
         if totalComments >= 0:
             percent = ((count / totalComments) * 100)
-            progressStats = f"[ {str(count)} / {str(totalComments)} ]".ljust(15, " ") + f" ({percent:.2f}%)"
+            progressStats = (
+                f"[ {count} / {str(totalComments)} ]".ljust(15, " ")
+                + f" ({percent:.2f}%)"
+            )
             print(f'    >  Retrieving Post Comments - {progressStats}', end='\r')
         else: 
             print(f'    >  Loaded {F.YELLOW}{count}{S.R} comment(s)', end='\r')

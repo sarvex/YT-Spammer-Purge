@@ -38,13 +38,11 @@ def get_video_title(current, video_id):
 
     if results['items']:
       title = results["items"][0]["snippet"]["title"]
-      current.vidTitleDict[video_id] = title
-    elif (len(video_id) == 26 or len(video_id) == 36) and video_id[0:2] == "Ug":
+    elif len(video_id) in {26, 36} and video_id[:2] == "Ug":
       title = "[Community Post - No Title]"
-      current.vidTitleDict[video_id] = title
     else:
       title = "[Title Unavailable]"
-      current.vidTitleDict[video_id] = title
+    current.vidTitleDict[video_id] = title
   else:
     title = "[Title Unavailable]"
 
@@ -53,29 +51,25 @@ def get_video_title(current, video_id):
 
 ######################### Convert string to set of characters#########################
 def make_char_set(stringInput, stripLettersNumbers=False, stripKeyboardSpecialChars=False, stripPunctuation=False):
-    # Optional lists of characters to strip from string
-    translateDict = {}
-    charsToStrip = " "
-    if stripLettersNumbers == True:
-      numbersLettersChars = ("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-      charsToStrip += numbersLettersChars
-    if stripKeyboardSpecialChars == True:
-      keyboardSpecialChars = ("!@#$%^&*()_+-=[]\{\}|;':,./<>?`~")
-      charsToStrip += keyboardSpecialChars
-    if stripPunctuation == True:
-      punctuationChars = ("!?\".,;:'-/()")
-      charsToStrip += punctuationChars
-    
-    # Adds characters to dictionary to use with translate to remove these characters
-    for c in charsToStrip:
-      translateDict[ord(c)] = None
-    translateDict[ord("\ufe0f")] = None # Strips invisible varation selector for emojis
-    
-    # Removes charsToStrip from string
-    stringInput = stringInput.translate(translateDict)
-    listedInput = list(stringInput)
-    
-    return set(filter(None, listedInput))
+  charsToStrip = " "
+  if stripLettersNumbers == True:
+    numbersLettersChars = ("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    charsToStrip += numbersLettersChars
+  if stripKeyboardSpecialChars == True:
+    keyboardSpecialChars = ("!@#$%^&*()_+-=[]\{\}|;':,./<>?`~")
+    charsToStrip += keyboardSpecialChars
+  if stripPunctuation == True:
+    punctuationChars = ("!?\".,;:'-/()")
+    charsToStrip += punctuationChars
+
+  translateDict = {ord(c): None for c in charsToStrip}
+  translateDict[ord("\ufe0f")] = None # Strips invisible varation selector for emojis
+
+  # Removes charsToStrip from string
+  stringInput = stringInput.translate(translateDict)
+  listedInput = list(stringInput)
+
+  return set(filter(None, listedInput))
 
 ######################### Check List Against String #########################    
 # Checks if any items in a list are a substring of a string
@@ -83,10 +77,7 @@ def check_list_against_string(listInput, stringInput, caseSensitive=False):
   if caseSensitive == False:
     stringInput = stringInput.lower()
     listInput = [item.lower() for item in listInput]
-  if any(x in stringInput for x in listInput):
-    return True
-  else:
-    return False
+  return any((x in stringInput for x in listInput))
 
 
 ################### Process Comma-Separated String to List ####################
@@ -123,9 +114,11 @@ def process_spammer_ids(rawString):
   for i in range(len(inputList)):
     valid, IDList[i], channelTitle = validation.validate_channel_id(inputList[i])
     if valid == False:
-      print(f"{B.RED}{F.BLACK}Invalid{S.R} Channel ID or Link: " + str(inputList[i]) + "\n")
+      print(
+          f"{B.RED}{F.BLACK}Invalid{S.R} Channel ID or Link: {str(inputList[i])}"
+          + "\n")
       return False, None
-  
+
   return True, IDList  
 
 
@@ -154,13 +147,13 @@ def choice(message="", bypass=False):
 
   # While loop until valid input
   valid = False
-  while valid == False:
+  while not valid:
     response = input("\n" + message + f" ({F.LIGHTCYAN_EX}y{S.R}/{F.LIGHTRED_EX}n{S.R}): ").strip()
-    if response == "Y" or response == "y":
+    if response in ["Y", "y"]:
       return True
-    elif response == "N" or response == "n":
+    elif response in ["N", "n"]:
       return False
-    elif response == "X" or response == "x":
+    elif response in ["X", "x"]:
       return None
     else:
       print("\nInvalid Input. Enter Y or N  --  Or enter X to return to main menu.")  
@@ -169,7 +162,7 @@ def choice(message="", bypass=False):
 ############################### ERROR HANDLING MESSAGES #################################
 
 def print_exception_reason(reason):
-  print("    Reason: " + str(reason))
+  print(f"    Reason: {str(reason)}")
   if reason == "processingFailure":
     print(f"\n {F.LIGHTRED_EX}[!!] Processing Error{S.R} - Sometimes this error fixes itself. Try just running the program again. !!")
     print("This issue is often on YouTube's side, so if it keeps happening try again later.")
@@ -185,16 +178,16 @@ def print_exception_reason(reason):
 
 def print_http_error_during_scan(hx):
   print("------------------------------------------------")
-  print(f"{B.RED}{F.WHITE} ERROR! {S.R}  Error Message: " + str(hx))
+  print(f"{B.RED}{F.WHITE} ERROR! {S.R}  Error Message: {str(hx)}")
   if hx.status_code:
-    print("Status Code: " + str(hx.status_code))
+    print(f"Status Code: {str(hx.status_code)}")
     if hx.error_details[0]["reason"]: # If error reason is available, print it
         reason = str(hx.error_details[0]["reason"])
         print_exception_reason(reason)
 
 def print_exception_during_scan(ex):
   print("------------------------------------------------")
-  print(f"{B.RED}{F.WHITE} ERROR! {S.R}  Error Message: " + str(ex))
+  print(f"{B.RED}{F.WHITE} ERROR! {S.R}  Error Message: {str(ex)}")
 
 def print_break_finished(scanMode):
   print("------------------------------------------------")

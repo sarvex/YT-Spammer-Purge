@@ -49,7 +49,7 @@ def get_authenticated_service():
   if not os.path.exists(CLIENT_SECRETS_FILE):
     # In case people don't have file extension viewing enabled, they may add a redundant json extension
     if os.path.exists(f"{CLIENT_SECRETS_FILE}.json"):
-      CLIENT_SECRETS_FILE = CLIENT_SECRETS_FILE + ".json"
+      CLIENT_SECRETS_FILE += ".json"
     else:
       print(f"\n         ----- {F.WHITE}{B.RED}[!] Error:{S.R} client_secrets.json file not found -----")
       print(f" ----- Did you create a {F.YELLOW}Google Cloud Platform Project{S.R} to access the API? ----- ")
@@ -85,7 +85,7 @@ def first_authentication():
   try:
     YOUTUBE = get_authenticated_service() # Create authentication object
   except JSONDecodeError as jx:
-    print(f"{F.WHITE}{B.RED} [!!!] Error: {S.R}" + str(jx))
+    print(f"{F.WHITE}{B.RED} [!!!] Error: {S.R}{str(jx)}")
     print(f"\nDid you make the client_secrets.json file yourself by {F.LIGHTRED_EX}copying and pasting into it{S.R}, instead of {F.LIGHTGREEN_EX}downloading it{S.R}?")
     print(f"You need to {F.YELLOW}download the json file directly from the google cloud dashboard{S.R} as shown in the instructions.")
     print("If you think this is a bug, you may report it on this project's GitHub page: https://github.com/ThioJoe/YT-Spammer-Purge/issues")
@@ -100,7 +100,7 @@ def first_authentication():
       print('\n')
       traceback.print_exc() # Prints traceback
       print("----------------")
-      print(f"{F.RED}[!!!] Error: {S.R}" + str(e))
+      print(f"{F.RED}[!!!] Error: {S.R}{str(e)}")
       print("If you think this is a bug, you may report it on this project's GitHub page: https://github.com/ThioJoe/YT-Spammer-Purge/issues")
       input(f"\nError Code A-1: {F.RED}Something went wrong during authentication.{S.R} {F.YELLOW}Try deleting the token.pickle file.{S.R} \nPress Enter to exit...")
       sys.exit()
@@ -122,6 +122,7 @@ def get_current_user(config):
       fields="items/id,items/snippet/title"
     ).execute()
     return results
+
   results = fetch_user()
 
   # Fetch the channel ID and title from the API response
@@ -149,14 +150,15 @@ def get_current_user(config):
       channelTitle = results["items"][0]["snippet"]["title"] # If channel ID was found, but not channel title/name
     except KeyError:
       print("Error Getting Current User: Channel ID was found, but channel title was not retrieved. If this occurs again, try deleting 'token.pickle' file and re-running. If that doesn't work, consider filing a bug report on the GitHub project 'issues' page.")
-      print("> NOTE: The program may still work - You can try continuing. Just check the channel ID is correct: " + str(channelID))
+      print(
+          f"> NOTE: The program may still work - You can try continuing. Just check the channel ID is correct: {str(channelID)}"
+      )
       channelTitle = ""
       input("Press Enter to Continue...")
-      pass
   except ChannelIDError:
     traceback.print_exc()
     print("\nError: Still unable to get channel info. Big Bruh Moment. Try deleting token.pickle. The info above might help if you want to report a bug.")
-    print("Note: A channel ID was retrieved but is invalid: " + str(channelID))
+    print(f"Note: A channel ID was retrieved but is invalid: {str(channelID)}")
     input("\nPress Enter to Exit...")
     sys.exit()
   except KeyError:
@@ -164,8 +166,8 @@ def get_current_user(config):
     print("\nError: Still unable to get channel info. Big Bruh Moment. Try deleting token.pickle. The info above might help if you want to report a bug.")
     input("\nPress Enter to Exit...")
     sys.exit()
-  
-  if config == None:
+
+  if config is None:
     configMatch = None # Used only if channel ID is set in the config
   elif config['your_channel_id'] == "ask":
     configMatch = None

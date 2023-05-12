@@ -26,9 +26,9 @@ import pickle
 def check_lists_update(spamListDict, silentCheck = False):
   SpamListFolder = spamListDict['Meta']['SpamListFolder']
   currentListVersion = spamListDict['Meta']['VersionInfo']['LatestLocalVersion']
-  
+
   def update_last_checked():
-    currentDate = datetime.today().strftime('%Y.%m.%d.%H.%M')
+    currentDate = datetime.now().strftime('%Y.%m.%d.%H.%M')
     #Update Dictionary with latest release gotten from API
     spamListDict['Meta']['VersionInfo'].update({'LatestLocalVersion': latestRelease})
     spamListDict['Meta']['VersionInfo'].update({'LastChecked': currentDate})
@@ -41,9 +41,7 @@ def check_lists_update(spamListDict, silentCheck = False):
   if silentCheck == False:
     print("\nChecking for updates to spam lists...")
 
-  if os.path.isdir(SpamListFolder):
-    pass
-  else:
+  if not os.path.isdir(SpamListFolder):
     try:
       os.mkdir(SpamListFolder)
     except:
@@ -62,7 +60,9 @@ def check_lists_update(spamListDict, silentCheck = False):
       else:
         if silentCheck == False:
           print(f"{B.RED}{F.WHITE}Error [U-3L]:{S.R} Got non 200 status code (got: {response.status_code}) when attempting to check for spam list update.\n")
-          print(f"If this keeps happening, you may want to report the issue here: https://github.com/ThioJoe/YT-Spammer-Purge/issues")
+          print(
+              "If this keeps happening, you may want to report the issue here: https://github.com/ThioJoe/YT-Spammer-Purge/issues"
+          )
           if silentCheck == False:
             return False
         else:
@@ -71,19 +71,18 @@ def check_lists_update(spamListDict, silentCheck = False):
   except OSError as ox:
     if silentCheck == True:
       return spamListDict
-    else:
-      if "WinError 10013" in str(ox):
-        print(f"{B.RED}{F.WHITE}WinError 10013:{S.R} The OS blocked the connection to GitHub. Check your firewall settings.\n")
-        return False
+    if "WinError 10013" in str(ox):
+      print(f"{B.RED}{F.WHITE}WinError 10013:{S.R} The OS blocked the connection to GitHub. Check your firewall settings.\n")
+      return False
   except:
     if silentCheck == True:
       return spamListDict
-    else:
-      print("Error: Could not get latest release info from GitHub. Please try again later.")
-      return False
+    print("Error: Could not get latest release info from GitHub. Please try again later.")
+    return False
 
   # If update available
-  if currentListVersion == None or (parse_version(latestRelease) > parse_version(currentListVersion)):
+  if currentListVersion is None or parse_version(
+      latestRelease) > parse_version(currentListVersion):
     print("\n>  A new spam list update is available. Downloading...")
     fileName = response.json()["assets"][0]['name']
     total_size_in_bytes = response.json()["assets"][0]['size']
@@ -95,7 +94,7 @@ def check_lists_update(spamListDict, silentCheck = False):
     with open(downloadFilePath, 'wb') as file:
       for data in filedownload.iter_content(block_size):
         file.write(data)
-  
+
     if os.stat(downloadFilePath).st_size == total_size_in_bytes:
       # Unzip files into folder and delete zip file
       attempts = 0
@@ -111,13 +110,13 @@ def check_lists_update(spamListDict, silentCheck = False):
         except PermissionError as e:
           if attempts <= 10:
             continue
-          else:
-            traceback.print_exc()
-            print(f"\n> {F.RED}Error:{S.R} The zip file containing the spam lists was downloaded, but there was a problem extracting the files because of a permission error. ")
-            print(f"This can happen if an antivirus takes a while to scan the file. You may need to manually extract the zip file.")
-            input("\nPress enter to Continue anyway...")
-            break
-        # THIS MEANS SUCCESS, the zip file was deleted after extracting, so returns
+          traceback.print_exc()
+          print(f"\n> {F.RED}Error:{S.R} The zip file containing the spam lists was downloaded, but there was a problem extracting the files because of a permission error. ")
+          print(
+              "This can happen if an antivirus takes a while to scan the file. You may need to manually extract the zip file."
+          )
+          input("\nPress enter to Continue anyway...")
+          break
         except FileNotFoundError:
           update_last_checked()
           return spamListDict
@@ -149,15 +148,14 @@ def check_for_update(currentVersion, updateReleaseChannel, silentCheck=False):
           print(f"This means you have been {F.YELLOW}rate limited by github.com{S.R}. Please try again in a while.\n")
         else:
           print(f"\n{B.RED}{F.WHITE}Error [U-4]:{S.R} Got an 403 (ratelimit_reached) when attempting to check for update.")
-        return None
-
+      elif silentCheck == False:
+        print(f"{B.RED}{F.WHITE}Error [U-3]:{S.R} Got non 200 status code (got: {response.status_code}) when attempting to check for update.\n")
+        print(
+            "If this keeps happening, you may want to report the issue here: https://github.com/ThioJoe/YT-Spammer-Purge/issues"
+        )
       else:
-        if silentCheck == False:
-          print(f"{B.RED}{F.WHITE}Error [U-3]:{S.R} Got non 200 status code (got: {response.status_code}) when attempting to check for update.\n")
-          print(f"If this keeps happening, you may want to report the issue here: https://github.com/ThioJoe/YT-Spammer-Purge/issues")
-        else:
-          print(f"{B.RED}{F.WHITE}Error [U-3]:{S.R} Got non 200 status code (got: {response.status_code}) when attempting to check for update.\n")
-        return None
+        print(f"{B.RED}{F.WHITE}Error [U-3]:{S.R} Got non 200 status code (got: {response.status_code}) when attempting to check for update.\n")
+      return None
 
     else:
       # assume 200 response (good)
@@ -183,11 +181,7 @@ def check_for_update(currentVersion, updateReleaseChannel, silentCheck=False):
     return None
 
   if parse_version(latestVersion) > parse_version(currentVersion):
-    if isBeta == True:
-      isUpdateAvailable = "beta"
-    else:
-      isUpdateAvailable = True
-
+    isUpdateAvailable = "beta" if isBeta == True else True
     if silentCheck == False:
       print("------------------------------------------------------------------------------------------")
       if isBeta == True:
@@ -201,7 +195,7 @@ def check_for_update(currentVersion, updateReleaseChannel, silentCheck=False):
       print("------------------------------------------------------------------------------------------")
       userChoice = choice("Update Now?")
       if userChoice == True:
-        if sys.platform == 'win32' or sys.platform == 'win64':
+        if sys.platform in ['win32', 'win64']:
           print(f"\n> {F.LIGHTCYAN_EX} Downloading Latest Version...{S.R}")
           if updateReleaseChannel == "stable":
             jsondata = json.dumps(response.json()["assets"])
@@ -262,7 +256,7 @@ def check_for_update(currentVersion, updateReleaseChannel, silentCheck=False):
                 print("The info above may help if it's a bug, which you can report here: https://github.com/ThioJoe/YT-Spammer-Purge/issues")
                 input("Press enter to Exit...")
                 sys.exit()
-            elif confirm == False or confirm == None:
+            elif confirm == False or confirm is None:
               return False
 
           # Download File
@@ -281,19 +275,17 @@ def check_for_update(currentVersion, updateReleaseChannel, silentCheck=False):
             os.remove(downloadFileName)
             print(f"\n> {F.RED} File did not fully download. Please try again later.")
             return False
-          elif total_size_in_bytes == 0:
+          else:
             print("Something is wrong with the download on the remote end. You should manually download latest version here:")
             print("https://github.com/ThioJoe/YT-Spammer-Purge/releases")
 
           # Verify hash
-          if ignoreHash == False:
-            if downloadHashSHA256 == hashlib.sha256(open(downloadFileName, 'rb').read()).hexdigest().lower():
-              pass
-            else:
-              os.remove(downloadFileName)
-              print(f"\n> {F.RED} Hash did not match. Please try again later.")
-              print("Or download the latest version manually from here: https://github.com/ThioJoe/YT-Spammer-Purge/releases")
-              return False
+          if (not ignoreHash and downloadHashSHA256 != hashlib.sha256(
+              open(downloadFileName, 'rb').read()).hexdigest().lower()):
+            os.remove(downloadFileName)
+            print(f"\n> {F.RED} Hash did not match. Please try again later.")
+            print("Or download the latest version manually from here: https://github.com/ThioJoe/YT-Spammer-Purge/releases")
+            return False
 
           # Print Success
           print(f"\n >  Download Completed: {F.LIGHTGREEN_EX}{downloadFileName}{S.R}")
@@ -328,13 +320,13 @@ def check_for_update(currentVersion, updateReleaseChannel, silentCheck=False):
             print(f"\n> {F.RED}Error: {S.R}GitHub returned a non 200 status code while trying to download newer version.\nStatus returned: {r.status_code}")
             input("Press Enter to Exit...")
             sys.exit()
-          
+
           # Extract the tar file and delete it
           print("\n> Extracting...")
           with tarfile.open(tarFileName) as file:
             file.extractall(f'./{stagingFolder}')
           os.remove(tarFileName)
-          print(f"> Installing...")
+          print("> Installing...")
           # Retrieve the name of the folder containing the main file, we are assuming there will always be only one folder here
           extraFolderPath = os.listdir(f"./{stagingFolder}")
           # If there happens to be more then one folder
@@ -347,7 +339,7 @@ def check_for_update(currentVersion, updateReleaseChannel, silentCheck=False):
             sys.exit()
           else:
             extraFolderPath = f"{cwd}/{stagingFolder}/{extraFolderPath[0]}"
-            
+
             for file_name in os.listdir(extraFolderPath):
               if os.path.exists(file_name):
                 try:
@@ -365,14 +357,16 @@ def check_for_update(currentVersion, updateReleaseChannel, silentCheck=False):
         else:
           print(f"> {F.RED} Error:{S.R} You are using an unsupported OS for the autoupdater (macos). \n This updater only supports Windows and Linux (right now). Feel free to get the files from github: https://github.com/ThioJoe/YT-Spammer-Purge")
           return False
-      elif userChoice == "False" or userChoice == None:
+      elif userChoice == "False" or userChoice is None:
         return False
     elif silentCheck == True:
       return isUpdateAvailable
 
   elif parse_version(latestVersion) == parse_version(currentVersion):
     if silentCheck == False:
-      print(f"\nYou have the {F.LIGHTGREEN_EX}latest{S.R} version: {F.LIGHTGREEN_EX}" + currentVersion)
+      print(
+          f"\nYou have the {F.LIGHTGREEN_EX}latest{S.R} version: {F.LIGHTGREEN_EX}{currentVersion}"
+      )
     return False
   else:
     if silentCheck == False:
@@ -387,17 +381,18 @@ def getRemoteFile(url, stream, silent=False, headers=None):
       response = requests.get(url, headers=headers)
     elif stream == True:
       response = requests.get(url, headers=headers, stream=True)
-    if response.status_code != 200:
-      if silent == False:
-        print("Error fetching remote file or resource: " + url)
-        print("Response Code: " + str(response.status_code))
-    else:
+    if response.status_code == 200:
       return response
 
+    if silent == False:
+      print(f"Error fetching remote file or resource: {url}")
+      print(f"Response Code: {str(response.status_code)}")
   except Exception as e:
     if silent == False:
       print(e + "\n")
-      print(f"{B.RED}{F.WHITE} Error {S.R} While Fetching Remote File or Resource: " + url)
+      print(
+          f"{B.RED}{F.WHITE} Error {S.R} While Fetching Remote File or Resource: {url}"
+      )
       print("See above messages for details.\n")
       print("If this keeps happening, you may want to report the issue here: https://github.com/ThioJoe/YT-Spammer-Purge/issues")
     return None
@@ -448,7 +443,7 @@ def load_config_file(configVersion=None, forceDefault=False, skipConfigChoice=Fa
   wrappedConfigData = io.StringIO(configData)
   parser = ConfigParser()
   parser.read_file(wrappedConfigData)
- 
+
   # Convert raw config dictionary into easier to use dictionary
   settingsToKeepCase = ["your_channel_id", "videos_to_scan", "channel_ids_to_filter", "regex_to_filter", "channel_to_scan", "log_path", "this_config_description", "configs_path"]
   validWordVars = ['ask', 'mine', 'default']
@@ -468,19 +463,15 @@ def load_config_file(configVersion=None, forceDefault=False, skipConfigChoice=Fa
   # Prevent prompt about config file if it's the default config file
   if default == True:
     configDict['use_this_config'] = True
-  # ----------------------------------------------------------------------------------------------------------------------
-  # Check if config out of date, update, ask to use config or not
   else:
     if configDict['use_this_config'] == False:
       configDict = load_config_file(forceDefault = True)
-    elif configDict['use_this_config'] == 'ask' or configDict['use_this_config'] == True:
+    elif configDict['use_this_config'] in ['ask', True]:
       if configVersion != None:
         configDict = check_update_config_file(configVersion, configDict, currentConfigFileNameWithPath)
-      if configDict['use_this_config'] == True or skipConfigChoice == True:
-        pass
-      else:
+      if configDict['use_this_config'] != True and skipConfigChoice != True:
         configDict = choose_config_file(configDict, configVersion, currentConfigFileNameWithPath)
-        
+
     else:
       print("Error C-1: Invalid value in config file for setting 'use_this_config' - Must be 'True', 'False', or 'Ask'")
       input("Press Enter to exit...")

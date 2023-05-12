@@ -81,8 +81,6 @@ def rClicker(e):
 
     except TclError:
         print(' - rClick menu, something wrong')
-        pass
-
     return "break"
 
 def rClickbinder(r):
@@ -92,7 +90,6 @@ def rClickbinder(r):
                         func=rClicker, add='')
     except TclError:
         print(' - rClickbinder, something wrong')
-        pass
 
 ###################### Main Window ############################
 
@@ -140,11 +137,11 @@ def take_input_gui(mode, stripLettersNumbers=False, stripKeyboardSpecialChars=Fa
         try:
             if len(returnText) == 0:
                 warningMessage.itemconfig(state="normal")
-                pass
             elif len(returnText) > 0:
                 window.destroy()
         except NameError:
             warningMessage.itemconfig(state="normal")
+
 
 
 
@@ -192,7 +189,7 @@ def take_input_gui(mode, stripLettersNumbers=False, stripKeyboardSpecialChars=Fa
         state="disabled",
         highlightthickness=0,
         #tag="False"
-        
+
     )
     outputTextBox.place(
         x=27.0,
@@ -201,7 +198,7 @@ def take_input_gui(mode, stripLettersNumbers=False, stripKeyboardSpecialChars=Fa
         height=38.0
     )
 
-    
+
     entry_image_2 = PhotoImage(
         file=resource_path("inputTextBox.png"))
     entry_bg_2 = canvas.create_image(
